@@ -1,0 +1,47 @@
+name: 공개 페이지 갱신
+
+# 실행 방법
+#  1) 노션 「교육과정 내부 운영 관리」의 갱신 링크 (Apps Script → repository_dispatch)
+#  2) GitHub 저장소 Actions 탭 → 「공개 페이지 갱신」 → Run workflow
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [refresh]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 갱신이 겹치면 순서대로 처리 (진행 중인 갱신은 끊지 않음)
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 노션 내용으로 사이트 만들기
+        run: node scripts/build.mjs
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
