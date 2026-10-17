@@ -1,0 +1,13 @@
+{
+  "name": "course-guide-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "노션 '교육과정 안내' 데이터로 공개용 교육과정 안내 사이트를 만드는 생성기",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  }
+}
