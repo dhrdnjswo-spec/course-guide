@@ -24,7 +24,7 @@ export async function build({ notion, fetchBinary = defaultFetchBinary, outDir =
   };
 
   const data = await loadAll(notion, config, ctx);
-  const { subjects, curricula, instructors, deptColors } = data;
+  const { subjects, curricula, instructors, deptColors, typeColors, typeOrder } = data;
 
   // 이미지 저장 (노션 이미지 주소는 1시간 뒤 만료되므로 파일로 내려받아 둔다)
   await rm(outDir, { recursive: true, force: true });
@@ -77,7 +77,7 @@ export async function build({ notion, fetchBinary = defaultFetchBinary, outDir =
   const subjectOfCurriculum = new Map();
   for (const s of subjects) for (const id of s.curriculumIds) if (!subjectOfCurriculum.has(id)) subjectOfCurriculum.set(id, s);
 
-  await writeFile(path.join(outDir, "index.html"), renderIndex({ config, subjects, curricula, instructors, deptColors, builtAt }));
+  await writeFile(path.join(outDir, "index.html"), renderIndex({ config, subjects, curricula, instructors, deptColors, typeColors, typeOrder, builtAt }));
   for (const c of curricula.values()) {
     const subject = subjectOfCurriculum.get(c.id);
     if (!subject) curIssues.get(c.id).add("과목 목록에 연결되지 않아 메인 페이지에서 보이지 않음");

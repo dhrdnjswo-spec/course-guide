@@ -92,10 +92,16 @@ details.dept:not([open]) .chev::after { content: "펼치기"; }
 .cur { text-decoration: none; border-radius: 6px; padding: 3px 10px; font-size: 14px; background: var(--soft); color: var(--fg); border: 1px solid transparent; display: inline-flex; align-items: center; gap: 5px; }
 .cur::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--t); }
 .cur:hover, .cur:focus-visible { border-color: var(--t); outline: none; }
-.t-weekday { --t: var(--n-blue); }
-.t-alt { --t: var(--n-purple); }
-.t-weekend { --t: var(--n-orange); }
-.t-etc { --t: var(--n-gray); }
+.t-gray { --t: var(--n-gray); }
+.t-brown { --t: var(--n-brown); }
+.t-orange { --t: var(--n-orange); }
+.t-yellow { --t: var(--n-yellow); }
+.t-green { --t: var(--n-green); }
+.t-blue { --t: var(--n-blue); }
+.t-purple { --t: var(--n-purple); }
+.t-pink { --t: var(--n-pink); }
+.t-red { --t: var(--n-red); }
+.t-slate { --t: var(--n-slate); }
 .ins { color: var(--accent); text-decoration: none; }
 .ins:hover, .ins:focus-visible { text-decoration: underline; outline: none; }
 .role { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 2px; }
