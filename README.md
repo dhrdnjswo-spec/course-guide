@@ -130,7 +130,7 @@ lib/notion.mjs           노션 API 연결
 lib/data.mjs             데이터베이스 읽기
 lib/parse.mjs            본문 해석 (회차 카드 · 준비 사항 · 이미지 · 안내 문구 제외)
 lib/render.mjs           페이지 HTML
-assets/                  디자인(CSS) · 검색 · A4 이미지 저장
+assets/                  디자인(CSS) · 검색 · A4 이미지·PDF 저장
 .github/workflows/       갱신 자동화
 apps-script/갱신링크.gs   노션용 갱신 링크
 ```

@@ -1,14 +1,15 @@
-// 커리큘럼 페이지: A4 이미지 저장, 이미지 크게 보기
+// 커리큘럼 페이지: A4 이미지·PDF 저장, 이미지 크게 보기
 (function () {
   var A4 = 297 / 210, SCALE = 2;
   var saveBtn = document.getElementById("saveBtn");
+  var pdfBtn = document.getElementById("pdfBtn");
   var modal = document.getElementById("modal");
   var pagesEl = document.getElementById("pages");
   var msg = document.getElementById("saveMsg");
   var sheet = document.getElementById("sheet");
   var title = saveBtn ? saveBtn.getAttribute("data-title") : document.title;
   var fileBase = title.replace(/[\\/:*?"<>|]+/g, "").replace(/\s*·\s*/g, "_").replace(/\s+/g, "_") + "_커리큘럼";
-  var blobs = [], urls = [];
+  var canvases = [], blobs = [], urls = [];
 
   function blocks() {
     var top = sheet.getBoundingClientRect().top;
@@ -61,9 +62,9 @@
         ctx.font = (11 * SCALE) + 'px "Noto Sans KR", sans-serif';
         ctx.textAlign = "right";
         ctx.fillText(title + "   " + (p + 1) + " / " + cuts.length, W - 40 * SCALE, H - 20 * SCALE);
-        return new Promise(function (r) { cv.toBlob(r, "image/png"); });
+        return cv;
       });
-      return Promise.all(jobs);
+      return jobs;
     });
   }
 
@@ -80,16 +81,56 @@
     a.remove();
   }
 
+  function toBlobs(list) {
+    return Promise.all(list.map(function (cv) { return new Promise(function (r) { cv.toBlob(r, "image/png"); }); }));
+  }
+
+  // 쪽 이미지를 만들어 두고(한 번만) 다시 씀
+  var ready = null;
+  function pages() {
+    if (!ready) ready = Promise.resolve().then(build).then(function (list) {
+      canvases = list;
+      return toBlobs(list).then(function (b) {
+        urls.forEach(function (u) { URL.revokeObjectURL(u); });
+        blobs = b;
+        urls = blobs.map(function (x) { return URL.createObjectURL(x); });
+        return canvases;
+      });
+    }).catch(function (e) { ready = null; throw e; });
+    return ready;
+  }
+
+  function savePdf() {
+    var J = window.jspdf && window.jspdf.jsPDF;
+    if (!J) return Promise.reject(new Error("no jspdf"));
+    return pages().then(function (list) {
+      var doc = new J({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+      list.forEach(function (cv, i) {
+        if (i > 0) doc.addPage("a4", "portrait");
+        doc.addImage(cv.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, 210, 297, undefined, "FAST");
+      });
+      var url = URL.createObjectURL(doc.output("blob"));
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = fileBase + ".pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    });
+  }
+
+  function busy(btn, label) {
+    btn.disabled = true;
+    btn.textContent = "만드는 중…";
+    return function () { btn.disabled = false; btn.textContent = label; };
+  }
+
   if (saveBtn && window.html2canvas) {
     saveBtn.addEventListener("click", function () {
-      saveBtn.disabled = true;
-      saveBtn.textContent = "만드는 중…";
-      var done = function () { saveBtn.disabled = false; saveBtn.textContent = "이미지로 저장 (A4)"; };
-      build().then(function (out) {
-        urls.forEach(function (u) { URL.revokeObjectURL(u); });
-        blobs = out;
-        urls = blobs.map(function (b) { return URL.createObjectURL(b); });
-        document.getElementById("modalSub").textContent = "A4 비율 PNG " + blobs.length + "장";
+      var done = busy(saveBtn, "이미지로 저장 (A4)");
+      pages().then(function () {
+        document.getElementById("modalSub").textContent = "A4 비율 " + blobs.length + "쪽";
         pagesEl.innerHTML = "";
         urls.forEach(function (u, i) {
           var d = document.createElement("div"); d.className = "pg";
@@ -111,10 +152,23 @@
     document.getElementById("saveAllBtn").addEventListener("click", function () {
       blobs.forEach(function (_, i) { setTimeout(function () { save(i); }, i * 400); });
     });
+    var modalPdf = document.getElementById("savePdfBtn");
+    [pdfBtn, modalPdf].forEach(function (btn) {
+      if (!btn) return;
+      if (!window.jspdf) { btn.hidden = true; return; }
+      btn.addEventListener("click", function () {
+        var done = busy(btn, btn.getAttribute("data-label"));
+        savePdf().then(done).catch(function () {
+          done();
+          alert("PDF를 만들지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        });
+      });
+    });
     document.getElementById("closeBtn").addEventListener("click", function () { modal.hidden = true; saveBtn.focus(); });
     modal.addEventListener("click", function (e) { if (e.target === modal) modal.hidden = true; });
-  } else if (saveBtn) {
-    saveBtn.hidden = true;
+  } else {
+    if (saveBtn) saveBtn.hidden = true;
+    if (pdfBtn) pdfBtn.hidden = true;
   }
 
   // 이미지 크게 보기
